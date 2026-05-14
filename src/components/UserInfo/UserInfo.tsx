@@ -1,15 +1,17 @@
 import React from 'react';
 import { User } from '../../types/User';
 
-type Props = {
+interface Props {
   user: User;
-};
+}
 
-export const UserInfo: React.FC<Props> = ({ user }) => (
-  <div className="UserInfo">
-    <span className="UserInfo__name">{user.name}</span>
-    <a href={`mailto:${user.email}`} className="UserInfo__link">
-      {user.email}
-    </a>
-  </div>
-);
+export const UserInfo: React.FC<Props> = ({ user }) => {
+  return (
+    <div className="UserInfo">
+      <h3 className="title is-4">{user.name}</h3>
+      <p>
+        <a href={`mailto:${user.email}`}>{user.email}</a>
+      </p>
+    </div>
+  );
+};
