@@ -8,14 +8,14 @@ interface Props {
   users: User[];
 }
 
-export const TodoList: React.FC<Props> = ({ todos, users = [] }) => {
+export const TodoList: React.FC<Props> = ({ todos, users }) => {
   return (
     <section className="TodoList">
-      <h2 className="title is-4">TodoList</h2>
+      <h2>Todo List</h2>
       {todos.map(todo => (
         <TodoInfo
+          user={users.find(user => user.id === todo.userId) || null}
           todo={todo}
-          user={users.find(user => user.id === todo.userId)}
           key={todo.id}
         />
       ))}
