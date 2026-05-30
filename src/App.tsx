@@ -1,125 +1,125 @@
-import React, { useState } from 'react';
-import { User } from './types/User';
-import { Todo } from './types/Todo';
+import React, { useState, useEffect } from 'react';
+import { TodoList } from './components/TodoList/TodoList';
 import { TodoInfo } from './components/TodoInfo/TodoInfo';
+import { Todo } from './types/Todo';
+import { User } from './types/User';
 
-type Props = {
-  users?: User[];
-  onAdd?: (todo: Todo) => void;
-};
+const App: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [selectedTodo] = useState<Todo | undefined>(undefined);
 
-export const App: React.FC<Props> = ({ users = [], onAdd }) => {
-  const [userId, setUserId] = useState(0);
   const [title, setTitle] = useState('');
-  const [errors, setErrors] = useState({ title: false, user: false });
+  const [userId, setUserId] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value);
-    if (errors.title) {
-      setErrors(prev => ({ ...prev, title: false }));
-    }
-  };
+  useEffect(() => {
+    fetch('https://jsonplaceholder.typicode.com/users')
+      .then(response => response.json())
+      .then((data: User[]) => setUsers(data))
+      .catch(() => {});
+  }, []);
 
-  const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setUserId(Number(e.target.value));
-    if (errors.user) {
-      setErrors(prev => ({ ...prev, user: false }));
-    }
-  };
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const isTitleInvalid = title.trim() === '';
-    const isUserInvalid = userId === 0;
-
-    if (isTitleInvalid || isUserInvalid) {
-      setErrors({ title: isTitleInvalid, user: isUserInvalid });
-
+    if (!title.trim() || !userId) {
       return;
     }
 
-    const newTodo: Todo = {
-      id: Math.random(),
-      userId,
-      title,
-      completed: false,
-    };
+    setIsSubmitting(true);
 
-    if (onAdd) {
-      onAdd(newTodo);
-    }
+    setTimeout(() => {
+      const newTodo: Todo = {
+        id: Date.now(),
+        title: title.trim(),
+        userId: Number(userId),
+        completed: false,
+      };
 
-    setTitle('');
-    setUserId(0);
+      setTodos(prevTodos => [...prevTodos, newTodo]);
+
+      setTitle('');
+      setUserId('');
+      setIsSubmitting(false);
+    }, 300);
   };
 
-  const selectedUser = users?.find(u => u.id === userId) || null;
+  const selectedUser =
+    users.find(u => u.id === selectedTodo?.userId) || undefined;
 
   return (
     <div className="section">
-      <form onSubmit={handleSubmit} data-cy="TodoForm">
-        <div className="field">
-          <label className="label" htmlFor="todo-title">
-            Title
-          </label>
-          <div className="control">
-            <input
-              id="todo-title"
-              data-cy="TodoTitleField"
-              type="text"
-              className={`input ${errors.title ? 'is-danger' : ''}`}
-              placeholder="Todo title"
-              value={title}
-              onChange={handleTitleChange}
-            />
-          </div>
-          {errors.title && (
-            <p className="help is-danger" data-cy="TitleError">
-              Please enter a title
-            </p>
-          )}
-        </div>
+      <div className="container">
+        <h1 className="title">Add Todo Form</h1>
 
-        <div className="field">
-          <label className="label" htmlFor="todo-user">
-            User
-          </label>
-          <div className="control">
-            <div className={`select ${errors.user ? 'is-danger' : ''}`}>
-              <select
-                id="todo-user"
-                data-cy="TodoUserField"
-                value={userId}
-                onChange={handleUserChange}
-              >
-                <option value="0">Select a user</option>
-                {users.map(user => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
-                  </option>
-                ))}
-              </select>
+        <form onSubmit={handleSubmit} data-cy="todoForm">
+          <div className="field">
+            <label className="label" htmlFor="todo-title">
+              Title
+            </label>
+            <div className="control">
+              <input
+                id="todo-title"
+                data-cy="todoTitle"
+                type="text"
+                className="input"
+                placeholder="Enter todo title"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                disabled={isSubmitting}
+              />
             </div>
           </div>
-          {errors.user && (
-            <p className="help is-danger" data-cy="UserError">
-              Please choose a user
-            </p>
-          )}
+
+          <div className="field">
+            <label className="label" htmlFor="user-select">
+              User
+            </label>
+            <div className="control">
+              <div className="select is-fullwidth">
+                <select
+                  id="user-select"
+                  data-cy="userSelect"
+                  value={userId}
+                  onChange={e => setUserId(e.target.value)}
+                  disabled={isSubmitting}
+                >
+                  <option value="">Choose a user</option>
+                  {users.map(user => (
+                    <option key={user.id} value={user.id.toString()}>
+                      {user.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="control">
+            <button
+              type="submit"
+              data-cy="submitButton"
+              className={`button is-primary ${isSubmitting ? 'is-loading' : ''}`}
+              disabled={isSubmitting}
+            >
+              Add Todo
+            </button>
+          </div>
+        </form>
+
+        <hr />
+
+        <div className="block">
+          <TodoList todos={todos} users={users} />
         </div>
 
-        <button type="submit" className="button is-primary">
-          Add Todo
-        </button>
-      </form>
-
-      {userId > 0 && title && (
-        <TodoInfo
-          todo={{ title, userId, completed: false, id: 0 }}
-          user={selectedUser}
-        />
-      )}
+        <div className="block" style={{ marginTop: '20px' }}>
+          <TodoInfo todo={selectedTodo} user={selectedUser} />
+        </div>
+      </div>
     </div>
   );
 };
+
+export { App };
