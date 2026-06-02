@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 import { TodoList } from './components/TodoList/TodoList';
-import { TodoInfo } from './components/TodoInfo/TodoInfo';
 
 import initialTodos from './api/todos';
 import initialUsers from './api/users';
@@ -10,23 +9,15 @@ import { Todo } from './types/Todo';
 import { User } from './types/User';
 
 export const App: React.FC = () => {
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [users] = useState<User[]>(initialUsers);
   const [todos, setTodos] = useState<Todo[]>(initialTodos);
 
-  const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const [title, setTitle] = useState('');
   const [userId, setUserId] = useState<number>(0);
 
   const [titleError, setTitleError] = useState('');
   const [userError, setUserError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    fetch('https://jsonplaceholder.typicode.com/users')
-      .then(response => response.json())
-      .then((data: User[]) => setUsers(data))
-      .catch(() => {});
-  }, []);
 
   const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(event.target.value);
@@ -43,13 +34,11 @@ export const App: React.FC = () => {
 
     let hasError = false;
 
-    // ВИПРАВЛЕНО ТЕКСТ ПОМИЛКИ: Тепер точно за вимогами тестів
     if (!title.trim()) {
       setTitleError('Please enter a title');
       hasError = true;
     }
 
-    // ВИПРАВЛЕНО ТЕКСТ ПОМИЛКИ: Тепер точно за вимогами тестів
     if (userId === 0) {
       setUserError('Please choose a user');
       hasError = true;
@@ -62,7 +51,6 @@ export const App: React.FC = () => {
     setIsSubmitting(true);
 
     const currentTodoUser = users.find(user => user.id === userId);
-
     const nextId = todos.length > 0 ? Math.max(...todos.map(t => t.id)) + 1 : 1;
 
     const newTodo: Todo = {
@@ -79,9 +67,6 @@ export const App: React.FC = () => {
     setUserId(0);
     setIsSubmitting(false);
   };
-
-  const selectedUser =
-    users.find(user => user.id === selectedTodo?.userId) || null;
 
   return (
     <div className="section">
@@ -147,16 +132,7 @@ export const App: React.FC = () => {
 
         <div className="block">
           <h2 className="subtitle">Todo list</h2>
-          <TodoList todos={todos} users={users} onSelect={setSelectedTodo} />
-        </div>
-
-        <div className="block">
-          <h2 className="subtitle">Todo details</h2>
-          {selectedTodo ? (
-            <TodoInfo todo={selectedTodo} user={selectedUser} />
-          ) : (
-            <p>No todo selected</p>
-          )}
+          <TodoList todos={todos} users={users} />
         </div>
       </div>
     </div>

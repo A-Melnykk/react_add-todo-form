@@ -1,14 +1,12 @@
 import React from 'react';
 import { Todo } from '../../types/Todo';
-import { User } from '../../types/User';
-import { UserInfo } from '../UserInfo/UserInfo';
 
+import { UserInfo } from '../UserInfo/UserInfo';
 interface Props {
   todo: Todo;
-  user: User | null;
 }
 
-export const TodoInfo: React.FC<Props> = ({ todo, user }) => {
+export const TodoInfo: React.FC<Props> = ({ todo }) => {
   return (
     <div
       className={`TodoInfo ${todo.completed ? 'TodoInfo--completed' : ''}`}
@@ -16,7 +14,7 @@ export const TodoInfo: React.FC<Props> = ({ todo, user }) => {
     >
       <span className="TodoInfo__title">{todo.title}</span>
 
-      <UserInfo user={user} />
+      {todo.user && <UserInfo user={todo.user} />}
     </div>
   );
 };
