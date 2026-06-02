@@ -4,20 +4,32 @@ import { User } from '../../types/User';
 import { TodoInfo } from '../TodoInfo/TodoInfo';
 
 interface Props {
-  todos?: Todo[];
+  todos: Todo[];
   users: User[];
+  onSelect: (todo: Todo) => void;
 }
 
-export const TodoList: React.FC<Props> = ({ todos = [], users }) => {
+export const TodoList: React.FC<Props> = ({
+  todos = [],
+  users = [],
+  onSelect,
+}) => {
   return (
-    <section className="section">
-      {todos.map(todo => (
-        <TodoInfo
-          key={todo.id}
-          todo={todo}
-          user={users.find(u => u.id === todo.userId) || null}
-        />
-      ))}
-    </section>
+    <div className="TodoList" data-cy="TodoList">
+      {todos.map(todo => {
+        const currentUser =
+          users?.find(user => user.id === todo.userId) || null;
+
+        return (
+          <div
+            key={todo.id}
+            onClick={() => onSelect(todo)}
+            style={{ cursor: 'pointer' }}
+          >
+            <TodoInfo todo={todo} user={currentUser} />
+          </div>
+        );
+      })}
+    </div>
   );
 };

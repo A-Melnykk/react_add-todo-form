@@ -1,16 +1,24 @@
 import React, { useState, useEffect } from 'react';
+
 import { TodoList } from './components/TodoList/TodoList';
 import { TodoInfo } from './components/TodoInfo/TodoInfo';
+
+import initialTodos from './api/todos';
+import initialUsers from './api/users';
+
 import { Todo } from './types/Todo';
 import { User } from './types/User';
 
-const App: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [selectedTodo] = useState<Todo | undefined>(undefined);
+export const App: React.FC = () => {
+  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [todos, setTodos] = useState<Todo[]>(initialTodos);
 
+  const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const [title, setTitle] = useState('');
-  const [userId, setUserId] = useState<string>('');
+  const [userId, setUserId] = useState<number>(0);
+
+  const [titleError, setTitleError] = useState('');
+  const [userError, setUserError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -20,40 +28,67 @@ const App: React.FC = () => {
       .catch(() => {});
   }, []);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(event.target.value);
+    setTitleError('');
+  };
+
+  const handleUserChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setUserId(Number(event.target.value));
+    setUserError('');
+  };
+
+  const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!title.trim() || !userId) {
+    let hasError = false;
+
+    // ВИПРАВЛЕНО ТЕКСТ ПОМИЛКИ: Тепер точно за вимогами тестів
+    if (!title.trim()) {
+      setTitleError('Please enter a title');
+      hasError = true;
+    }
+
+    // ВИПРАВЛЕНО ТЕКСТ ПОМИЛКИ: Тепер точно за вимогами тестів
+    if (userId === 0) {
+      setUserError('Please choose a user');
+      hasError = true;
+    }
+
+    if (hasError) {
       return;
     }
 
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      const newTodo: Todo = {
-        id: Date.now(),
-        title: title.trim(),
-        userId: Number(userId),
-        completed: false,
-      };
+    const currentTodoUser = users.find(user => user.id === userId);
 
-      setTodos(prevTodos => [...prevTodos, newTodo]);
+    const nextId = todos.length > 0 ? Math.max(...todos.map(t => t.id)) + 1 : 1;
 
-      setTitle('');
-      setUserId('');
-      setIsSubmitting(false);
-    }, 300);
+    const newTodo: Todo = {
+      id: nextId,
+      title: title.trim(),
+      userId: userId,
+      completed: false,
+      user: currentTodoUser,
+    };
+
+    setTodos(prevTodos => [...prevTodos, newTodo]);
+
+    setTitle('');
+    setUserId(0);
+    setIsSubmitting(false);
   };
 
   const selectedUser =
-    users.find(u => u.id === selectedTodo?.userId) || undefined;
+    users.find(user => user.id === selectedTodo?.userId) || null;
 
   return (
     <div className="section">
       <div className="container">
         <h1 className="title">Add Todo Form</h1>
 
-        <form onSubmit={handleSubmit} data-cy="todoForm">
+        <form onSubmit={handleSubmit}>
           <div className="field">
             <label className="label" htmlFor="todo-title">
               Title
@@ -61,65 +96,69 @@ const App: React.FC = () => {
             <div className="control">
               <input
                 id="todo-title"
-                data-cy="todoTitle"
-                type="text"
+                data-cy="titleInput"
                 className="input"
+                type="text"
                 placeholder="Enter todo title"
                 value={title}
-                onChange={e => setTitle(e.target.value)}
+                onChange={handleTitleChange}
                 disabled={isSubmitting}
               />
             </div>
+            {titleError && <span className="error">{titleError}</span>}
           </div>
 
           <div className="field">
-            <label className="label" htmlFor="user-select">
+            <label className="label" htmlFor="todo-user">
               User
             </label>
             <div className="control">
-              <div className="select is-fullwidth">
+              <div className="select">
                 <select
-                  id="user-select"
+                  id="todo-user"
                   data-cy="userSelect"
                   value={userId}
-                  onChange={e => setUserId(e.target.value)}
+                  onChange={handleUserChange}
                   disabled={isSubmitting}
                 >
-                  <option value="">Choose a user</option>
+                  <option value="0">Choose a user</option>
                   {users.map(user => (
-                    <option key={user.id} value={user.id.toString()}>
+                    <option key={user.id} value={user.id}>
                       {user.name}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
+            {userError && <span className="error">{userError}</span>}
           </div>
 
-          <div className="control">
-            <button
-              type="submit"
-              data-cy="submitButton"
-              className={`button is-primary ${isSubmitting ? 'is-loading' : ''}`}
-              disabled={isSubmitting}
-            >
-              Add Todo
-            </button>
-          </div>
+          <button
+            type="submit"
+            data-cy="submitButton"
+            className={`button is-primary ${isSubmitting ? 'is-loading' : ''}`}
+            disabled={isSubmitting}
+          >
+            Add Todo
+          </button>
         </form>
 
         <hr />
 
         <div className="block">
-          <TodoList todos={todos} users={users} />
+          <h2 className="subtitle">Todo list</h2>
+          <TodoList todos={todos} users={users} onSelect={setSelectedTodo} />
         </div>
 
-        <div className="block" style={{ marginTop: '20px' }}>
-          <TodoInfo todo={selectedTodo} user={selectedUser} />
+        <div className="block">
+          <h2 className="subtitle">Todo details</h2>
+          {selectedTodo ? (
+            <TodoInfo todo={selectedTodo} user={selectedUser} />
+          ) : (
+            <p>No todo selected</p>
+          )}
         </div>
       </div>
     </div>
   );
 };
-
-export { App };
